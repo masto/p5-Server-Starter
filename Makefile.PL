@@ -5,8 +5,6 @@ all_from 'lib/Server/Starter.pm';
 license 'perl';
 
 requires 'Getopt::Long';
-requires 'List::MoreUtils';
-requires 'Proc::Wait3';
 requires 'Scope::Guard';
 test_requires 'Test::TCP' => '0.11';
 

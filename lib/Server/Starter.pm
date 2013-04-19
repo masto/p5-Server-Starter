@@ -8,9 +8,7 @@ use Fcntl;
 use IO::Handle;
 use IO::Socket::INET;
 use IO::Socket::UNIX;
-use List::MoreUtils qw(uniq);
 use POSIX qw(:sys_wait_h);
-use Proc::Wait3;
 use Scope::Guard;
 
 use Exporter qw(import);
@@ -19,6 +17,32 @@ our $VERSION = '0.12';
 our @EXPORT_OK = qw(start_server restart_server server_ports);
 
 my @signals_received;
+
+# From List::MoreUtils
+sub uniq (@) {
+    my %seen = ();
+    grep { not $seen{$_}++ } @_;
+}
+
+# Simplified replacement for Proc::Wait3
+sub wait3 {
+    my $block = shift;
+
+    # Interrupt sleep on SIGCHLD
+    local $SIG{CHLD} = sub { };
+
+    while (1) {
+      my $pid = waitpid(-1, WNOHANG);
+
+      if ($pid > 0) {
+        return $pid, $?;
+      }
+
+      return unless $block && ! @signals_received;
+
+      sleep 60;
+    }
+}
 
 sub start_server {
     my $opts = {
